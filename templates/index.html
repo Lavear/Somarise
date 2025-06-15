@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Sleep Analytics Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Gauge.js -->
+  <script src="https://bernii.github.io/gauge.js/dist/gauge.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'inter': ['Inter', 'sans-serif'],
+          },
+          animation: {
+            'gradient-shift': 'gradient-shift 15s ease infinite',
+            'pulse': 'pulse 0.6s ease-in-out',
+            'float': 'float 6s ease-in-out infinite',
+            'spin-slow': 'spin 1s ease-in-out infinite',
+          },
+          keyframes: {
+            'gradient-shift': {
+              '0%, 100%': { 'background-position': '0% 50%' },
+              '50%': { 'background-position': '100% 50%' },
+            },
+            'float': {
+              '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+              '50%': { transform: 'translateY(-20px) rotate(180deg)' },
+            },
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+    }
+  </style>
+</head>
+<body class="font-inter min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-500 bg-[length:400%_400%] animate-gradient-shift overflow-x-hidden">
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute w-16 h-16 top-[20%] left-[10%] rounded-full bg-white/10 animate-float"></div>
+    <div class="absolute w-20 h-20 top-[60%] right-[10%] rounded-full bg-white/10 animate-float delay-[2s]"></div>
+    <div class="absolute w-12 h-12 top-[80%] left-[20%] rounded-full bg-white/10 animate-float delay-[4s]"></div>
+  </div>
+
+  <div class="container mx-auto px-4 py-8 backdrop-blur-lg bg-white/5 rounded-[30px] my-5 border border-white/10">
+    <header class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-white tracking-tight mb-4 text-shadow">Smart Sleep Analytics</h1>
+      <p class="text-xl text-white/80 font-light mb-8">Advanced real-time sleep monitoring and intelligent analysis</p>
+      <div class="inline-flex items-center px-6 py-3 rounded-full bg-white/20 backdrop-blur border border-white/30 text-white font-medium shadow-lg transition-all hover:transform hover:-translate-y-1 hover:shadow-xl">
+        <div class="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin-slow mr-2"></div>
+        Live Monitoring Active
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <!-- Motion Card -->
+      <div class="transform transition-all duration-300 hover:scale-105 hover:-translate-y-2">
+        <div class="relative p-8 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl text-white">
+          <i class="fas fa-wave-square absolute top-8 right-8 text-4xl opacity-30 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent"></i>
+          <h6 class="text-sm uppercase tracking-wider text-white/70 font-medium mb-4">Motion Intensity</h6>
+          <p id="motion" class="text-4xl font-bold mb-2 text-shadow">–</p>
+          <p class="text-sm text-white/60">Real-time movement detection</p>
+        </div>
+      </div>
+
+      <!-- Sleep State Card -->
+      <div class="transform transition-all duration-300 hover:scale-105 hover:-translate-y-2">
+        <div class="relative p-8 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl text-white">
+          <i class="fas fa-moon absolute top-8 right-8 text-4xl opacity-30 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent"></i>
+          <h6 class="text-sm uppercase tracking-wider text-white/70 font-medium mb-4">Sleep Phase</h6>
+          <p id="state" class="text-4xl font-bold mb-2 text-shadow">–</p>
+          <p class="text-sm text-white/60">Current sleep stage analysis</p>
+        </div>
+      </div>
+
+      <!-- Sleep Score Card -->
+      <div class="transform transition-all duration-300 hover:scale-105 hover:-translate-y-2">
+        <div class="relative p-8 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl text-white">
+          <i class="fas fa-star absolute top-8 right-8 text-4xl opacity-30 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent"></i>
+          <h6 class="text-sm uppercase tracking-wider text-white/70 font-medium mb-4">Sleep Quality</h6>
+          <p id="score" class="text-4xl font-bold mb-2 text-shadow">–</p>
+          <p class="text-sm text-white/60">15-second quality assessment</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-6">
+      <!-- Left side (75%) -->
+      <div class="flex-[3] space-y-6">
+        <!-- Motion Chart -->
+        <div class="w-full">
+          <div class="p-6 rounded-2xl bg-white/95 shadow-xl">
+            <div class="flex items-start justify-between mb-6">
+              <div>
+                <h5 class="text-xl font-semibold text-gray-800 mb-1">Motion Analytics</h5>
+                <p class="text-sm text-gray-600">Real-time movement tracking & trends</p>
+              </div>
+              <span id="motion-trend" class="px-4 py-2 rounded-full text-sm font-medium"></span>
+            </div>
+            <div class="h-[350px]">
+              <canvas id="lineChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Heart Rate Chart -->
+        <div class="w-full">
+          <div class="p-6 rounded-2xl bg-white/95 shadow-xl">
+            <div class="flex items-start justify-between mb-6">
+              <div>
+                <h5 class="text-xl font-semibold text-gray-800 mb-1">Heart Rate Analytics</h5>
+                <p class="text-sm text-gray-600">Continuous heart rate monitoring</p>
+              </div>
+              <div class="flex items-center px-4 py-2 rounded-xl bg-red-50">
+                <i class="fas fa-heartbeat text-red-500 mr-2"></i>
+                <span id="current-hr" class="text-lg font-semibold text-gray-800">72</span>
+                <span class="text-gray-600 ml-1">BPM</span>
+              </div>
+            </div>
+            <div class="h-[200px]">
+              <canvas id="heartRateChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- SpO2 Chart -->
+        <div class="w-full">
+          <div class="p-6 rounded-2xl bg-white/95 shadow-xl">
+            <div class="flex items-start justify-between mb-6">
+              <div>
+                <h5 class="text-xl font-semibold text-gray-800 mb-1">Blood Oxygen Analytics</h5>
+                <p class="text-sm text-gray-600">Continuous SpO2 monitoring</p>
+              </div>
+              <div class="flex items-center px-4 py-2 rounded-xl bg-blue-50">
+                <i class="fas fa-lungs text-blue-500 mr-2"></i>
+                <span id="current-spo2" class="text-lg font-semibold text-gray-800">96</span>
+                <span class="text-gray-600 ml-1">%</span>
+              </div>
+            </div>
+            <div class="h-[200px]">
+              <canvas id="spo2Chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side (25%) -->
+      <div class="flex-1 space-y-6">
+        <!-- Sleep Analysis -->
+        <div class="p-6 rounded-2xl bg-white/95 shadow-xl">
+          <h5 class="text-xl font-semibold text-gray-800 mb-1">Sleep Quality Score</h5>
+          <p class="text-sm text-gray-600 mb-6">Current session analysis</p>
+          <div class="relative w-[220px] h-[220px] mx-auto mb-8">
+            <canvas id="qualityGauge"></canvas>
+            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 text-base font-medium text-gray-600">Overall Quality Rating</div>
+          </div>
+        </div>
+        
+        <div class="p-6 rounded-2xl bg-white/95 shadow-xl">
+          <h5 class="text-xl font-semibold text-gray-800 mb-1">Sleep Phase Distribution</h5>
+          <p class="text-sm text-gray-600 mb-6">Session breakdown</p>
+          <div class="h-[250px] mb-6">
+            <canvas id="pieChart"></canvas>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-100 transition-all hover:-translate-y-1 hover:shadow-lg">
+              <div id="deep-sleep-percent" class="text-2xl font-bold text-gray-800 mb-1">0%</div>
+              <div class="text-sm font-medium text-gray-600">Deep Sleep</div>
+            </div>
+            <div class="p-4 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 border border-orange-100 transition-all hover:-translate-y-1 hover:shadow-lg">
+              <div id="light-sleep-percent" class="text-2xl font-bold text-gray-800 mb-1">0%</div>
+              <div class="text-sm font-medium text-gray-600">Light Sleep</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Data containers
+    let labels = [];
+    let motionData = [];
+    let lightCount = 0, deepCount = 0;
+    const MAX_POINTS = 25;
+
+    // Initialize vital signs data
+    let hrData = [];
+    let spo2Data = [];
+
+    // Initialize Enhanced Gauge
+    const gauge = new Gauge(document.getElementById('qualityGauge')).setOptions({
+      angle: 0.1,
+      lineWidth: 0.2,
+      radiusScale: 0.9,
+      pointer: {
+        length: 0.65,
+        strokeWidth: 0.05,
+        color: '#667eea'
+      },
+      limitMax: false,
+      limitMin: false,
+      colorStart: '#667eea',
+      colorStop: '#764ba2',
+      strokeColor: 'rgba(0,0,0,0.1)',
+      generateGradient: true,
+      highDpiSupport: true,
+      percentColors: [
+        [0.0, "#ff4444"], 
+        [0.3, "#ffa000"], 
+        [0.7, "#4caf50"], 
+        [1.0, "#00C851"]
+      ],
+    });
+    gauge.maxValue = 100;
+    gauge.setMinValue(0);
+    gauge.animationSpeed = 40;
+    gauge.set(0);
+
+    // Add these variables at the start with other initializations
+    let lastPhaseChange = Date.now();
+    let currentPhase = '';
+    let sleepQualityScore = 50; // Start at neutral score
+
+    // Enhanced Line Chart
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    const lineChart = new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Motion Intensity',
+          data: motionData,
+          fill: true,
+          borderColor: '#667eea',
+          backgroundColor: 'rgba(102, 126, 234, 0.1)',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#667eea',
+          pointBorderWidth: 2,
+          tension: 0.4,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: '#667eea',
+          pointHoverBorderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#2c3e50',
+            bodyColor: '#2c3e50',
+            borderColor: '#667eea',
+            borderWidth: 2,
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: false,
+            titleFont: {
+              size: 14,
+              weight: '600'
+            },
+            bodyFont: {
+              size: 13
+            },
+            callbacks: {
+              label: function(context) {
+                return `Motion Level: ${context.parsed.y.toFixed(3)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 0,
+              color: '#6c757d',
+              font: {
+                size: 11
+              }
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+              lineWidth: 1
+            },
+            ticks: {
+              color: '#6c757d',
+              font: {
+                size: 11
+              },
+              callback: function(value) {
+                return value.toFixed(2);
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Enhanced Pie Chart
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    const pieChart = new Chart(pieCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Light Sleep', 'Deep Sleep'],
+        datasets: [{
+          data: [lightCount, deepCount],
+          backgroundColor: [
+            'rgba(255, 159, 64, 0.8)',
+            'rgba(102, 126, 234, 0.8)'
+          ],
+          borderColor: [
+            '#ff9f40',
+            '#667eea'
+          ],
+          borderWidth: 3,
+          hoverBorderWidth: 4,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              padding: 20,
+              usePointStyle: true,
+              font: {
+                family: "'Inter', sans-serif",
+                size: 13,
+                weight: '500'
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#2c3e50',
+            bodyColor: '#2c3e50',
+            borderColor: '#667eea',
+            borderWidth: 2,
+            padding: 12,
+            cornerRadius: 8
+          }
+        },
+        cutout: '65%'
+      }
+    });
+
+    // Enhanced trend calculation
+    function calculateTrend(data) {
+      if (data.length < 3) return 0;
+      const recent = data.slice(-3);
+      const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+      const older = data.slice(-6, -3);
+      if (older.length === 0) return 0;
+      const oldAvg = older.reduce((a, b) => a + b, 0) / older.length;
+      return avg - oldAvg;
+    }
+
+    // Update trend indicator
+    function updateTrendIndicator(trend) {
+      const indicator = document.getElementById('motion-trend');
+      if (trend > 0.001) {
+        indicator.className = 'px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30';
+        indicator.innerHTML = '<i class="fas fa-arrow-up me-1"></i> Increasing';
+      } else if (trend < -0.001) {
+        indicator.className = 'px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30';
+        indicator.innerHTML = '<i class="fas fa-arrow-down me-1"></i> Decreasing';
+      } else {
+        indicator.className = 'px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30';
+        indicator.innerHTML = '<i class="fas fa-minus me-1"></i> Stable';
+      }
+    }
+
+    // Create Heart Rate Chart
+    const hrCtx = document.getElementById('heartRateChart').getContext('2d');
+    const heartRateChart = new Chart(hrCtx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Heart Rate',
+          data: hrData,
+          fill: true,
+          borderColor: '#f5576c',
+          backgroundColor: 'rgba(245, 87, 108, 0.1)',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#f5576c',
+          pointBorderWidth: 2,
+          tension: 0.4,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: '#f5576c',
+          pointHoverBorderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#2c3e50',
+            bodyColor: '#2c3e50',
+            borderColor: '#f5576c',
+            borderWidth: 2,
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: false,
+            titleFont: {
+              size: 14,
+              weight: '600'
+            },
+            bodyFont: {
+              size: 13
+            },
+            callbacks: {
+              label: function(context) {
+                return `Heart Rate: ${context.parsed.y} BPM`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 0,
+              color: '#6c757d',
+              font: {
+                size: 11
+              }
+            }
+          },
+          y: {
+            beginAtZero: false,
+            min: 40,
+            max: 120,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+              lineWidth: 1
+            },
+            ticks: {
+              color: '#6c757d',
+              font: {
+                size: 11
+              },
+              stepSize: 10
+            }
+          }
+        }
+      }
+    });
+
+    // Create SpO2 Chart
+    const spo2Ctx = document.getElementById('spo2Chart').getContext('2d');
+    const spo2Chart = new Chart(spo2Ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'SpO2',
+          data: spo2Data,
+          fill: true,
+          borderColor: '#4facfe',
+          backgroundColor: 'rgba(79, 172, 254, 0.1)',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#4facfe',
+          pointBorderWidth: 2,
+          tension: 0.4,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: '#4facfe',
+          pointHoverBorderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#2c3e50',
+            bodyColor: '#2c3e50',
+            borderColor: '#4facfe',
+            borderWidth: 2,
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: false,
+            titleFont: {
+              size: 14,
+              weight: '600'
+            },
+            bodyFont: {
+              size: 13
+            },
+            callbacks: {
+              label: function(context) {
+                return `SpO2: ${context.parsed.y}%`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              maxRotation: 0,
+              color: '#6c757d',
+              font: {
+                size: 11
+              }
+            }
+          },
+          y: {
+            beginAtZero: false,
+            min: 85,
+            max: 100,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+              lineWidth: 1
+            },
+            ticks: {
+              color: '#6c757d',
+              font: {
+                size: 11
+              },
+              stepSize: 3
+            }
+          }
+        }
+      }
+    });
+
+    // Enhanced data fetching with better visual feedback
+    async function fetchData() {
+      try {
+        const res = await fetch('/data');
+        const json = await res.json();
+
+        // Update metrics with enhanced animations
+        const motionEl = document.getElementById('motion');
+        const stateEl = document.getElementById('state');
+        const scoreEl = document.getElementById('score');
+
+        // Motion update with animation
+        if (Math.abs(json.motion - parseFloat(motionEl.innerText)) > 0.01) {
+          motionEl.innerText = json.motion.toFixed(3);
+          motionEl.classList.add('animate-pulse');
+          motionEl.parentElement.classList.add('ring-2', 'ring-white/30', 'ring-offset-2', 'ring-offset-transparent');
+          setTimeout(() => {
+            motionEl.classList.remove('animate-pulse');
+            motionEl.parentElement.classList.remove('ring-2', 'ring-white/30', 'ring-offset-2', 'ring-offset-transparent');
+          }, 1000);
+        } else {
+          motionEl.innerText = json.motion.toFixed(3);
+        }
+
+        // State update with animation
+        if (json.state !== stateEl.innerText) {
+          stateEl.innerText = json.state;
+          stateEl.classList.add('animate-pulse');
+          stateEl.parentElement.classList.add('ring-2', 'ring-white/30', 'ring-offset-2', 'ring-offset-transparent');
+          setTimeout(() => {
+            stateEl.classList.remove('animate-pulse');
+            stateEl.parentElement.classList.remove('ring-2', 'ring-white/30', 'ring-offset-2', 'ring-offset-transparent');
+          }, 1000);
+        }
+
+        // Score update with animation
+        if (json.state) {  // Only proceed if we have a valid sleep state
+          // Check if sleep phase changed
+          if (currentPhase !== json.state) {
+            currentPhase = json.state;
+            lastPhaseChange = Date.now();
+          }
+
+          // Calculate time spent in current phase
+          const timeInCurrentPhase = Date.now() - lastPhaseChange;
+          
+          // Update score only after 15 seconds in a phase
+          if (timeInCurrentPhase >= 15000) { // 15 seconds in milliseconds
+            if (currentPhase === 'DEEP') {
+              // Gradually increase score for deep sleep
+              sleepQualityScore = Math.min(100, sleepQualityScore + 2);
+            } else if (currentPhase === 'LIGHT') {
+              // Gradually decrease score for light sleep
+              sleepQualityScore = Math.max(20, sleepQualityScore - 1);
+            }
+            // Reset timer for next 15-second interval
+            lastPhaseChange = Date.now();
+          }
+
+          // Update display with calculated score
+          scoreEl.innerText = sleepQualityScore.toFixed(1);
+          gauge.set(sleepQualityScore);
+          
+          if (json.state !== stateEl.innerText) {
+            scoreEl.classList.add('animate-pulse');
+            setTimeout(() => scoreEl.classList.remove('animate-pulse'), 1000);
+          }
+        }
+
+        // Update line chart
+        const now = new Date().toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        labels.push(now);
+        motionData.push(json.motion);
+        if (labels.length > MAX_POINTS) {
+          labels.shift();
+          motionData.shift();
+        }
+        
+        updateTrendIndicator(calculateTrend(motionData));
+        lineChart.update('none');
+
+        // Update vital signs data
+        hrData.push(json.bpm);
+        spo2Data.push(json.spo2);
+
+        if (hrData.length > MAX_POINTS) {
+          hrData.shift();
+          spo2Data.shift();
+        }
+
+        // Update vital signs charts
+        heartRateChart.update('none');
+        spo2Chart.update('none');
+
+        // Update current values with animation
+        const hrEl = document.getElementById('current-hr');
+        const spo2El = document.getElementById('current-spo2');
+        
+        hrEl.innerText = json.bpm.toFixed(1);
+        spo2El.innerText = json.spo2.toFixed(1);
+
+        // Update pie chart and percentages
+        if (json.state === 'LIGHT') lightCount++;
+        else if (json.state === 'DEEP') deepCount++;
+        
+        const total = lightCount + deepCount;
+        const lightPercent = total > 0 ? ((lightCount / total) * 100).toFixed(1) : 0;
+        const deepPercent = total > 0 ? ((deepCount / total) * 100).toFixed(1) : 0;
+        
+        document.getElementById('light-sleep-percent').innerText = lightPercent + '%';
+        document.getElementById('deep-sleep-percent').innerText = deepPercent + '%';
+        
+        pieChart.data.datasets[0].data = [lightCount, deepCount];
+        pieChart.update('none');
+
+      } catch (err) {
+        console.error('Fetch error:', err);
+      }
+    }
+
+    // Start enhanced polling
+    fetchData();
+    setInterval(fetchData, 1000);
+
+    // Add interactive effects
+    document.querySelectorAll('[class*="hover:"]').forEach(element => {
+      element.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-10px) scale(1.02)';
+      });
+      
+      element.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+      });
+    });
+  </script>
+</body>
+</html>
